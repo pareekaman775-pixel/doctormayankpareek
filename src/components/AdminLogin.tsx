@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
+import { apiUrl } from "../api";
 import {
   ArrowRight,
   LockKeyhole,
@@ -11,8 +12,6 @@ import {
 interface AdminLoginProps {
   onLoginSuccess: (token: string) => void;
 }
-
-const API_URL = "http://localhost:5000/api/auth/login";
 
 function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
   const [email, setEmail] = useState("");
@@ -29,7 +28,7 @@ function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
     setError("");
 
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

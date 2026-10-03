@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 
 import { siteData } from "./data/siteData";
+import { apiUrl } from "./api";
 import AdminLogin from "./components/AdminLogin";
 import AdminDashboard from "./components/AdminDashboard";
 
@@ -166,7 +167,7 @@ function App() {
 
     try {
       const response = await fetch(
-        "http://localhost:5000/api/appointments",
+        apiUrl("/api/appointments"),
         {
           method: "POST",
           headers: {

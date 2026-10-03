@@ -16,6 +16,7 @@ import {
   X,
   LogOut,
 } from "lucide-react";
+import { apiUrl } from "../api";
 
 type AppointmentStatus =
   | "PENDING"
@@ -41,9 +42,6 @@ interface AdminDashboardProps {
   token: string;
   onLogout: () => void;
 }
-
-const API_URL =
-  "http://localhost:5000/api/appointments";
 
 const TOKEN_KEY =
   "shree_shyam_admin_token";
@@ -170,7 +168,7 @@ function AdminDashboard({
       }
 
       const response = await fetch(
-        API_URL,
+        apiUrl("/api/appointments"),
         {
           method: "GET",
           headers: {
@@ -333,7 +331,7 @@ function AdminDashboard({
       }
 
       const response = await fetch(
-        `${API_URL}/${id}/${action}`,
+        apiUrl(`/api/appointments/${id}/${action}`),
         {
           method: "PUT",
 
