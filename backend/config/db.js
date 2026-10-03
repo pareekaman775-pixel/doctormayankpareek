@@ -10,25 +10,37 @@ const missingVariables = requiredVariables.filter(
   (name) => !Object.prototype.hasOwnProperty.call(process.env, name)
 );
 
-if (missingVariables.length > 0) {
-  throw new Error(
-    `Missing required database environment variables: ${missingVariables.join(", ")}`
-  );
-}
+const databaseConfigurationError = new Error(
+  `Database is not configured. Set backend environment variables: ${missingVariables.join(", ")}`
+);
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+const pool = missingVariables.length === 0
+  ? mysql.createPool({
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT || 3306),
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
 
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+    })
+  : {
+      async query() {
+        throw databaseConfigurationError;
+      },
+      async getConnection() {
+        throw databaseConfigurationError;
+      },
+    };
 
 const testDatabaseConnection = async () => {
+  if (missingVariables.length > 0) {
+    console.error(databaseConfigurationError.message);
+    return;
+  }
+
   try {
     const connection = await pool.getConnection();
 
@@ -41,6 +53,8 @@ const testDatabaseConnection = async () => {
   }
 };
 
-testDatabaseConnection();
+if (missingVariables.length === 0) {
+  testDatabaseConnection();
+}
 
 module.exports = pool;
