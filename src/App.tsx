@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 
 import { siteData } from "./data/siteData";
-import { API_URL, assertApiUrlConfigured } from "./api";
+import { apiFetch, readApiResponse } from "./api";
 import AdminLogin from "./components/AdminLogin";
 import AdminDashboard from "./components/AdminDashboard";
 
@@ -166,10 +166,7 @@ function App() {
     setAppointmentId(null);
 
     try {
-      assertApiUrlConfigured();
-      const response = await fetch(
-        `${API_URL}/api/appointments`,
-        {
+      const response = await apiFetch("/api/appointments", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -183,14 +180,16 @@ function App() {
             dentalConcern: appointmentData.concern,
             message: appointmentData.message.trim(),
           }),
-        }
-      );
+      });
 
-      const data = await response.json();
+      const data = await readApiResponse<{
+        message?: string;
+        appointment?: { id?: number };
+      }>(response);
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Unable to submit appointment request."
+          `HTTP ${response.status}: ${data.message || "Unable to submit appointment request."}`
         );
       }
 
@@ -211,15 +210,11 @@ function App() {
         message: "",
       });
     } catch (error) {
-      const originalMessage = error instanceof Error
+      const message = error instanceof Error
         ? error.message
-        : "Unknown connection error.";
-      const isFetchError = error instanceof TypeError;
-      const message = isFetchError
-        ? `Unable to connect to the appointment server. Please check the backend URL, CORS configuration, and backend deployment. Original error: ${originalMessage}`
-        : originalMessage;
+        : "Unable to submit appointment request. Unknown error.";
 
-      console.error("Appointment submission error:", message, error);
+      console.error("Appointment submission error:", error);
 
       setAppointmentStatus("error");
       setAppointmentMessage(message);

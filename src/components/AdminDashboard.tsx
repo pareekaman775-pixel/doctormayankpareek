@@ -16,7 +16,7 @@ import {
   X,
   LogOut,
 } from "lucide-react";
-import { API_URL, assertApiUrlConfigured } from "../api";
+import { apiFetch, readApiResponse } from "../api";
 
 type AppointmentStatus =
   | "PENDING"
@@ -36,6 +36,11 @@ type Appointment = {
   status: AppointmentStatus;
   created_at: string;
   confirmed_at: string | null;
+};
+
+type AppointmentsResponse = {
+  message?: string;
+  appointments?: Appointment[];
 };
 
 interface AdminDashboardProps {
@@ -151,7 +156,6 @@ function AdminDashboard({
     try {
       setLoading(true);
       setErrorMessage("");
-      assertApiUrlConfigured();
 
       /*
        * Use token received from App.tsx.
@@ -168,20 +172,16 @@ function AdminDashboard({
         return;
       }
 
-      const response = await fetch(
-        `${API_URL}/api/appointments`,
-        {
+      const response = await apiFetch("/api/appointments", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${authToken}`,
             "Content-Type":
               "application/json",
           },
-        }
-      );
+      });
 
-      const data =
-        await response.json();
+      const data = await readApiResponse<AppointmentsResponse>(response);
 
       /*
        * Session expired
@@ -201,8 +201,7 @@ function AdminDashboard({
 
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            "Unable to fetch appointments."
+          `HTTP ${response.status}: ${data.message || "Unable to fetch appointments."}`
         );
       }
 
@@ -331,9 +330,8 @@ function AdminDashboard({
         return;
       }
 
-      assertApiUrlConfigured();
-      const response = await fetch(
-        `${API_URL}/api/appointments/${id}/${action}`,
+      const response = await apiFetch(
+        `/api/appointments/${id}/${action}`,
         {
           method: "PUT",
 
@@ -342,11 +340,10 @@ function AdminDashboard({
             "Content-Type":
               "application/json",
           },
-        }
+          }
       );
 
-      const data =
-        await response.json();
+      const data = await readApiResponse<{ message?: string }>(response);
 
       if (
         response.status === 401 ||
@@ -363,8 +360,7 @@ function AdminDashboard({
 
       if (!response.ok) {
         throw new Error(
-          data.message ||
-            `Unable to ${action} appointment.`
+          `HTTP ${response.status}: ${data.message || `Unable to ${action} appointment.`}`
         );
       }
 

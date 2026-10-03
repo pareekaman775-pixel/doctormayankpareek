@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { API_URL, assertApiUrlConfigured } from "../api";
+import { apiFetch, readApiResponse } from "../api";
 import {
   ArrowRight,
   LockKeyhole,
@@ -28,8 +28,7 @@ function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
     setError("");
 
     try {
-      assertApiUrlConfigured();
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      const response = await apiFetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -40,11 +39,14 @@ function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
         }),
       });
 
-      const data = await response.json();
+      const data = await readApiResponse<{
+        message?: string;
+        token?: string;
+      }>(response);
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Invalid email or password."
+          `HTTP ${response.status}: ${data.message || "Invalid email or password."}`
         );
       }
 
