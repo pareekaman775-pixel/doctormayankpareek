@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 
 import { siteData } from "./data/siteData";
-import { apiUrl } from "./api";
+import { API_URL, assertApiUrlConfigured } from "./api";
 import AdminLogin from "./components/AdminLogin";
 import AdminDashboard from "./components/AdminDashboard";
 
@@ -166,8 +166,9 @@ function App() {
     setAppointmentId(null);
 
     try {
+      assertApiUrlConfigured();
       const response = await fetch(
-        apiUrl("/api/appointments"),
+        `${API_URL}/api/appointments`,
         {
           method: "POST",
           headers: {
@@ -210,14 +211,18 @@ function App() {
         message: "",
       });
     } catch (error) {
-      console.error("Appointment submission error:", error);
+      const originalMessage = error instanceof Error
+        ? error.message
+        : "Unknown connection error.";
+      const isFetchError = error instanceof TypeError;
+      const message = isFetchError
+        ? `Unable to connect to the appointment server. Please check the backend URL, CORS configuration, and backend deployment. Original error: ${originalMessage}`
+        : originalMessage;
+
+      console.error("Appointment submission error:", message, error);
 
       setAppointmentStatus("error");
-      setAppointmentMessage(
-        error instanceof Error
-          ? error.message
-          : "Unable to submit appointment request. Please try again."
-      );
+      setAppointmentMessage(message);
     }
   };
 

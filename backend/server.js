@@ -15,10 +15,11 @@ const app = express();
 |--------------------------------------------------------------------------
 */
 
-const allowedOrigins = (process.env.CORS_ORIGINS || "http://localhost:5173")
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  process.env.FRONTEND_URL?.trim(),
+  "http://localhost:5173",
+  "http://localhost:5174",
+].filter(Boolean);
 
 app.use(
   cors({
@@ -29,6 +30,7 @@ app.use(
 
       return callback(new Error("Origin is not allowed by CORS."));
     },
+    credentials: true,
   })
 );
 
@@ -124,8 +126,12 @@ app.use(
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(
-    `Backend running on http://localhost:${PORT}`
-  );
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(
+      `Backend running on http://localhost:${PORT}`
+    );
+  });
+}
+
+module.exports = app;

@@ -16,7 +16,7 @@ import {
   X,
   LogOut,
 } from "lucide-react";
-import { apiUrl } from "../api";
+import { API_URL, assertApiUrlConfigured } from "../api";
 
 type AppointmentStatus =
   | "PENDING"
@@ -151,6 +151,7 @@ function AdminDashboard({
     try {
       setLoading(true);
       setErrorMessage("");
+      assertApiUrlConfigured();
 
       /*
        * Use token received from App.tsx.
@@ -168,7 +169,7 @@ function AdminDashboard({
       }
 
       const response = await fetch(
-        apiUrl("/api/appointments"),
+        `${API_URL}/api/appointments`,
         {
           method: "GET",
           headers: {
@@ -330,8 +331,9 @@ function AdminDashboard({
         return;
       }
 
+      assertApiUrlConfigured();
       const response = await fetch(
-        apiUrl(`/api/appointments/${id}/${action}`),
+        `${API_URL}/api/appointments/${id}/${action}`,
         {
           method: "PUT",
 

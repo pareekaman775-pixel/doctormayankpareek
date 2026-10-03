@@ -1,16 +1,11 @@
-const configuredApiBaseUrl = import.meta.env.VITE_API_URL?.trim();
+export const API_URL = (import.meta.env.VITE_API_URL || "")
+  .trim()
+  .replace(/\/+$/, "");
 
-const apiBaseUrl = (
-  configuredApiBaseUrl ||
-  (import.meta.env.DEV ? "http://localhost:5000" : "")
-).replace(/\/+$/, "");
-
-export const apiUrl = (path: string): string => {
-  if (!apiBaseUrl) {
+export const assertApiUrlConfigured = (): void => {
+  if (!API_URL) {
     throw new Error(
       "The API URL is not configured. Set VITE_API_URL in the deployment environment."
     );
   }
-
-  return `${apiBaseUrl}/${path.replace(/^\/+/, "")}`;
 };

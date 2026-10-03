@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { apiUrl } from "../api";
+import { API_URL, assertApiUrlConfigured } from "../api";
 import {
   ArrowRight,
   LockKeyhole,
@@ -28,7 +28,8 @@ function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
     setError("");
 
     try {
-      const response = await fetch(apiUrl("/api/auth/login"), {
+      assertApiUrlConfigured();
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
