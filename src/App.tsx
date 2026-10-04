@@ -63,6 +63,22 @@ const iconMap: Record<string, ElementType> = {
 const fallbackImage =
   "https://images.unsplash.com/photo-1629909613654-28e377c37b09?auto=format&fit=crop&w=1200&q=85";
 
+const serviceImages = [
+  "/service-images/service-01.png",
+  "/service-images/service-02.png",
+  "/service-images/service-03.png",
+  "/service-images/service-04.png",
+  "/service-images/service-05.png",
+  "/service-images/service-06.png",
+  "/service-images/service-07.png",
+  "/service-images/service-08.png",
+  "/service-images/service-09.png",
+  "/service-images/service-10.png",
+  "/service-images/service-11.png",
+  "/service-images/service-12.png",
+];
+
+
 const customerReviews = [
   { name: "Kailash Jat", rating: 5, text: "The consultation was clear and comfortable. Dr. Mayank explained the treatment properly and answered all my questions patiently." },
   { name: "Rekha Dabi", rating: 5, text: "Very good experience at Shree Shyam Dental Care. The clinic was clean, staff was helpful, and the treatment was handled with care." },
@@ -701,7 +717,7 @@ function App() {
                     <div className="relative h-52 overflow-hidden">
 
                       <img
-                        src={service.image || fallbackImage}
+                        src={serviceImages[index] || service.image || fallbackImage}
                         alt={service.title}
                         className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
                         onError={(event) => {

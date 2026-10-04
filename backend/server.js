@@ -9,45 +9,39 @@ const authRoutes = require("./routes/authRoutes");
 
 const app = express();
 
-/*
-|--------------------------------------------------------------------------
-| CORS
-|--------------------------------------------------------------------------
-*/
-
-const allowedOrigins = [
-  process.env.FRONTEND_URL?.trim(),
-  "http://localhost:5173",
-  "http://localhost:5174",
-].filter(Boolean);
+/* =========================================================
+   CORS
+========================================================= */
 
 app.use(
   cors({
-    origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      return callback(new Error("Origin is not allowed by CORS."));
-    },
-    credentials: true,
+    origin: [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+    ],
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE",
+      "OPTIONS",
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+    ],
   })
 );
 
-/*
-|--------------------------------------------------------------------------
-| JSON
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   BODY PARSER
+========================================================= */
 
 app.use(express.json());
 
-
-/*
-|--------------------------------------------------------------------------
-| Root
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   ROOT
+========================================================= */
 
 app.get("/", (req, res) => {
   res.json({
@@ -57,81 +51,81 @@ app.get("/", (req, res) => {
   });
 });
 
+/* =========================================================
+   DATABASE TEST
+========================================================= */
 
-/*
-|--------------------------------------------------------------------------
-| Database Test
-|--------------------------------------------------------------------------
-*/
+app.get("/api/test-db", async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      "SELECT 1 AS database_test"
+    );
 
-app.get(
-  "/api/test-db",
-  async (req, res) => {
-    try {
-      const [rows] = await pool.query(
-        "SELECT 1 AS database_test"
-      );
+    return res.status(200).json({
+      success: true,
+      message: "Database connection is working.",
+      result: rows,
+    });
+  } catch (error) {
+    console.error(
+      "Database test error:",
+      error.message
+    );
 
-      res.json({
-        success: true,
-        message:
-          "Database connection is working",
-        result: rows,
-      });
-    } catch (error) {
-      console.error(
-        "Database test error:",
-        error.message
-      );
-
-      res.status(500).json({
-        success: false,
-        message:
-          "Database connection failed",
-      });
-    }
+    return res.status(500).json({
+      success: false,
+      message: "Database connection failed.",
+    });
   }
-);
+});
 
+/* =========================================================
+   AUTH ROUTES
+========================================================= */
 
-/*
-|--------------------------------------------------------------------------
-| Authentication Routes
-|--------------------------------------------------------------------------
-*/
+app.use("/api/auth", authRoutes);
 
-app.use(
-  "/api/auth",
-  authRoutes
-);
-
-
-/*
-|--------------------------------------------------------------------------
-| Appointment Routes
-|--------------------------------------------------------------------------
-*/
+/* =========================================================
+   APPOINTMENT ROUTES
+========================================================= */
 
 app.use(
   "/api/appointments",
   appointmentRoutes
 );
 
+/* =========================================================
+   404
+========================================================= */
 
-/*
-|--------------------------------------------------------------------------
-| Server
-|--------------------------------------------------------------------------
-*/
-
-const PORT = process.env.PORT || 5000;
-
-if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(
-      `Backend running on http://localhost:${PORT}`
-    );
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "API route not found.",
   });
-}
+});
 
-module.exports = app;
+/* =========================================================
+   ERROR HANDLER
+========================================================= */
+
+app.use((error, req, res, next) => {
+  console.error("Server error:", error);
+
+  res.status(500).json({
+    success: false,
+    message: "Internal server error.",
+  });
+});
+
+/* =========================================================
+   SERVER
+========================================================= */
+
+const PORT = 5000;
+
+app.listen(PORT, () => {
+  console.log(
+    `Backend running on http://localhost:${PORT}`
+  );
+});
