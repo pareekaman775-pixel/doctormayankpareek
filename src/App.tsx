@@ -37,7 +37,6 @@ import {
 } from "lucide-react";
 
 import { siteData } from "./data/siteData";
-import { apiFetch, readApiResponse } from "./api";
 import AdminLogin from "./components/AdminLogin";
 import AdminDashboard from "./components/AdminDashboard";
 
@@ -166,7 +165,9 @@ function App() {
     setAppointmentId(null);
 
     try {
-      const response = await apiFetch("/api/appointments", {
+      const response = await fetch(
+        "http://localhost:5000/api/appointments",
+        {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -180,16 +181,14 @@ function App() {
             dentalConcern: appointmentData.concern,
             message: appointmentData.message.trim(),
           }),
-      });
+        }
+      );
 
-      const data = await readApiResponse<{
-        message?: string;
-        appointment?: { id?: number };
-      }>(response);
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(
-          `HTTP ${response.status}: ${data.message || "Unable to submit appointment request."}`
+          data.message || "Unable to submit appointment request."
         );
       }
 
@@ -210,14 +209,14 @@ function App() {
         message: "",
       });
     } catch (error) {
-      const message = error instanceof Error
-        ? error.message
-        : "Unable to submit appointment request. Unknown error.";
-
       console.error("Appointment submission error:", error);
 
       setAppointmentStatus("error");
-      setAppointmentMessage(message);
+      setAppointmentMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to submit appointment request. Please try again."
+      );
     }
   };
 
@@ -1107,91 +1106,263 @@ function App() {
 
         {/* ========================= REVIEWS ========================= */}
 
-        <section id="reviews" className="relative overflow-hidden bg-white py-24 sm:py-28">
+        <section id="reviews" className="relative overflow-hidden bg-[#f7fbfa] py-24 sm:py-28">
 
-          <div className="pointer-events-none absolute -left-32 top-20 h-72 w-72 rounded-full bg-[#dff1ee] opacity-60 blur-3xl" />
-          <div className="pointer-events-none absolute -right-32 bottom-10 h-80 w-80 rounded-full bg-[#f1e8d5] opacity-50 blur-3xl" />
+          <style>{`
+            @keyframes reviewMarqueeLeft {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+
+            @keyframes reviewMarqueeRight {
+              0% { transform: translateX(-50%); }
+              100% { transform: translateX(0); }
+            }
+
+            .review-marquee-left {
+              animation: reviewMarqueeLeft 32s linear infinite;
+            }
+
+            .review-marquee-right {
+              animation: reviewMarqueeRight 36s linear infinite;
+            }
+
+            .review-marquee-left:hover,
+            .review-marquee-right:hover {
+              animation-play-state: paused;
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+              .review-marquee-left,
+              .review-marquee-right {
+                animation: none;
+              }
+            }
+          `}</style>
+
+          <div className="pointer-events-none absolute -left-40 top-10 h-80 w-80 rounded-full bg-[#d9efec] opacity-70 blur-3xl" />
+          <div className="pointer-events-none absolute -right-40 bottom-0 h-96 w-96 rounded-full bg-[#f0e5cf] opacity-60 blur-3xl" />
 
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
+            {/* SECTION HEADING */}
             <div className="mx-auto max-w-3xl text-center">
 
-              <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#d4e7e4] bg-[#f3f9f8] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.15em] text-[#0f6668]">
+              <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[#d4e7e4] bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[0.16em] text-[#0f6668] shadow-sm">
                 <Star size={14} fill="currentColor" />
                 Patient Reviews
               </div>
 
               <h2 className="mt-5 text-4xl font-bold tracking-[-0.035em] text-[#173235] sm:text-5xl">
-                What our patients say.
+                What our patients say about their <span className="text-[#0f6668]">dental care.</span>
               </h2>
 
               <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-[#718687] sm:text-lg">
-                Patient experiences and feedback about consultations, treatment and care at Shree Shyam Dental Care.
-              </p>
-
-              <div className="mx-auto mt-8 flex w-fit flex-col items-center gap-2 rounded-2xl border border-[#dce9e7] bg-[#fbfdfd] px-7 py-5 shadow-[0_10px_30px_rgba(20,70,70,0.05)] sm:flex-row sm:gap-5">
-                <div className="text-center sm:text-left">
-                  <div className="flex items-center justify-center gap-1 text-[#b48a32] sm:justify-start">
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <Star key={index} size={19} fill="currentColor" strokeWidth={1.7} />
-                    ))}
-                  </div>
-                  <p className="mt-2 text-xs font-semibold text-[#718687]">Based on {customerReviews.length} patient reviews</p>
-                </div>
-                <div className="hidden h-10 w-px bg-[#dce9e7] sm:block" />
-                <div className="text-center">
-                  <p className="text-3xl font-extrabold text-[#173235]">{averageReviewRating.toFixed(1)}</p>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#0f6668]">Overall Rating</p>
-                </div>
-              </div>
-
-              <p className="mt-4 text-[11px] text-[#93a2a2]">
-                ★ 4.5 average rating
+                Real feedback shared by patients about consultation, treatment and their experience at Shree Shyam Dental Care.
               </p>
 
             </div>
 
-            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {/* VIDEO-INSPIRED REVIEW LAYOUT */}
+            <div className="mt-14 grid items-center gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:gap-10">
 
-              {customerReviews.map((review, index) => (
-                <article
-                  key={`${review.name}-${index}`}
-                  className="group flex h-full min-h-[210px] flex-col rounded-2xl border border-[#e0ecea] bg-[#fbfdfd] p-4 shadow-[0_8px_24px_rgba(20,70,70,0.04)] transition duration-300 hover:-translate-y-1 hover:border-[#bfdedb] hover:shadow-[0_14px_35px_rgba(20,70,70,0.08)]"
-                >
+              {/* RATING SUMMARY CARD */}
+              <div className="relative z-10 mx-auto w-full max-w-[510px] rounded-[2rem] border border-[#dce9e7] bg-white p-7 shadow-[0_25px_70px_rgba(20,70,70,0.10)] sm:p-8 lg:sticky lg:top-28">
 
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex gap-1 text-[#b48a32]" aria-label={`${review.rating} out of 5 stars`}>
-                      {Array.from({ length: 5 }).map((_, starIndex) => (
-                        <Star
-                          key={starIndex}
-                          size={16}
-                          fill={starIndex < review.rating ? "currentColor" : "none"}
-                          className={starIndex < review.rating ? "" : "text-[#cbd8d7]"}
-                        />
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f3f9f8] text-[#0f6668]">
+                    <Star size={24} fill="currentColor" />
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-bold text-[#173235]">{siteData.clinic.name}</p>
+                    <p className="mt-0.5 text-xs text-[#8a9b9c]">Patient experience</p>
+                  </div>
+                </div>
+
+                <div className="mt-7 flex items-end gap-3">
+                  <span className="text-6xl font-extrabold leading-none tracking-[-0.06em] text-[#173235]">
+                    {averageReviewRating.toFixed(1)}
+                  </span>
+
+                  <div className="pb-1">
+                    <div className="flex gap-1 text-[#b48a32]">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star key={index} size={18} fill="currentColor" strokeWidth={1.7} />
                       ))}
                     </div>
-                    <span className="rounded-full bg-[#eaf4f2] px-2.5 py-1 text-[10px] font-bold text-[#0f6668]">
-                      {review.rating}.0
-                    </span>
+                    <p className="mt-1 text-xs font-semibold text-[#718687]">
+                      Based on {customerReviews.length} patient reviews
+                    </p>
                   </div>
+                </div>
 
-                  <p className="mt-3 line-clamp-2 flex-1 text-xs leading-5 text-[#667e7f]">
-                    “{review.text}”
-                  </p>
+                <div className="mt-7 space-y-3">
+                  {[5, 4, 3, 2, 1].map((rating) => {
+                    const count = customerReviews.filter(
+                      (review) => review.rating === rating
+                    ).length;
+                    const percentage = Math.round(
+                      (count / customerReviews.length) * 100
+                    );
 
-                  <div className="mt-4 flex items-center gap-2 border-t border-[#e5efed] pt-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f6668] text-xs font-bold text-white">
-                      {review.name.charAt(0)}
+                    return (
+                      <div key={rating} className="flex items-center gap-3">
+                        <span className="w-8 text-xs font-bold text-[#5f7778]">
+                          {rating}★
+                        </span>
+
+                        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[#e8f0ef]">
+                          <div
+                            className="h-full rounded-full bg-[#0f6668] transition-all duration-1000"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+
+                        <span className="w-9 text-right text-xs font-semibold text-[#718687]">
+                          {percentage}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-7 border-t border-[#e4eeec] pt-6">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f4f2] text-[#0f6668]">
+                      <Check size={17} />
                     </div>
                     <div>
-                      <p className="truncate text-xs font-bold text-[#294d4e]">{review.name}</p>
-                      <p className="mt-0.5 text-[9px] text-[#899999]">Patient Review</p>
+                      <p className="text-sm font-bold text-[#294d4e]">
+                        Patient-focused dental care
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-[#7a8d8e]">
+                        Comfortable consultation, clear communication and a calm clinic experience.
+                      </p>
                     </div>
-                    <Check size={14} className="ml-auto shrink-0 text-[#0f6668]" />
                   </div>
+                </div>
 
-                </article>
-              ))}
+                <a
+                  href="#appointment"
+                  className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#173235] px-5 py-3.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#0f6668]"
+                >
+                  Book an Appointment
+                  <ArrowRight size={16} />
+                </a>
+
+              </div>
+
+              {/* ANIMATED REVIEW WALL */}
+              <div className="relative min-w-0 overflow-hidden rounded-[2rem] border border-[#dce9e7] bg-white/70 py-5 shadow-[0_20px_60px_rgba(20,70,70,0.06)] backdrop-blur-sm">
+
+                {/* Soft edge fades — like the reference animation */}
+                <div className="pointer-events-none absolute inset-y-0 left-0 z-20 w-20 bg-gradient-to-r from-[#ffffff] to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 z-20 w-20 bg-gradient-to-l from-[#ffffff] to-transparent" />
+
+                {/* ROW 1 — moves left */}
+                <div className="review-marquee-left flex w-max gap-4 px-4">
+                  {[...customerReviews.slice(0, 5), ...customerReviews.slice(0, 5)].map(
+                    (review, index) => (
+                      <article
+                        key={`row1-${review.name}-${index}`}
+                        className="w-[290px] shrink-0 rounded-[1.5rem] border border-[#e0ecea] bg-white p-5 shadow-[0_10px_30px_rgba(20,70,70,0.06)] sm:w-[340px]"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0f6668] text-sm font-bold text-white">
+                              {review.name.charAt(0)}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-bold text-[#294d4e]">
+                                {review.name}
+                              </p>
+                              <p className="mt-0.5 text-[10px] text-[#8b9b9b]">
+                                Patient Review
+                              </p>
+                            </div>
+                          </div>
+
+                          <Check size={16} className="shrink-0 text-[#0f6668]" />
+                        </div>
+
+                        <div className="mt-4 flex gap-1 text-[#b48a32]">
+                          {Array.from({ length: 5 }).map((_, starIndex) => (
+                            <Star
+                              key={starIndex}
+                              size={15}
+                              fill={starIndex < review.rating ? "currentColor" : "none"}
+                              className={starIndex < review.rating ? "" : "text-[#d4dfde]"}
+                            />
+                          ))}
+                        </div>
+
+                        <p className="mt-4 min-h-[88px] text-sm leading-6 text-[#667e7f]">
+                          “{review.text}”
+                        </p>
+                      </article>
+                    )
+                  )}
+                </div>
+
+                {/* ROW 2 — moves right */}
+                <div className="review-marquee-right mt-4 flex w-max gap-4 px-4">
+                  {[...customerReviews.slice(5), ...customerReviews.slice(5)].map(
+                    (review, index) => (
+                      <article
+                        key={`row2-${review.name}-${index}`}
+                        className="w-[290px] shrink-0 rounded-[1.5rem] border border-[#e0ecea] bg-[#fbfdfd] p-5 shadow-[0_10px_30px_rgba(20,70,70,0.05)] sm:w-[340px]"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eaf4f2] text-sm font-bold text-[#0f6668]">
+                              {review.name
+                                .split(" ")
+                                .map((part) => part.charAt(0))
+                                .slice(0, 2)
+                                .join("")}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-bold text-[#294d4e]">
+                                {review.name}
+                              </p>
+                              <p className="mt-0.5 text-[10px] text-[#8b9b9b]">
+                                Patient Review
+                              </p>
+                            </div>
+                          </div>
+
+                          <span className="rounded-full bg-[#eaf4f2] px-2 py-1 text-[10px] font-bold text-[#0f6668]">
+                            {review.rating}.0
+                          </span>
+                        </div>
+
+                        <div className="mt-4 flex gap-1 text-[#b48a32]">
+                          {Array.from({ length: 5 }).map((_, starIndex) => (
+                            <Star
+                              key={starIndex}
+                              size={15}
+                              fill={starIndex < review.rating ? "currentColor" : "none"}
+                              className={starIndex < review.rating ? "" : "text-[#d4dfde]"}
+                            />
+                          ))}
+                        </div>
+
+                        <p className="mt-4 min-h-[88px] text-sm leading-6 text-[#667e7f]">
+                          “{review.text}”
+                        </p>
+                      </article>
+                    )
+                  )}
+                </div>
+
+                <div className="mt-5 flex items-center justify-center gap-2 px-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#93a2a2]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#0f6668]" />
+                  Auto-scrolling patient feedback
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#c39a43]" />
+                </div>
+
+              </div>
 
             </div>
 
